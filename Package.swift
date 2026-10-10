@@ -5,8 +5,8 @@ import PackageDescription
 // SPM can't download its release assets; this repo exists only to host the zipped XCFramework in public releases.
 // To release: attach MobileCore.xcframework.zip to a release tagged `<version>` here, then update `version` and
 // `checksum` below (`swift package compute-checksum MobileCore.xcframework.zip`) and tag the same commit.
-let version = "0.2.7"
-let checksum = "2d1107b10bd9a3841c9b0ada828b000b3585f44ca4a2d052ec9e4fbd900db9f6"
+let version = "0.3.0"
+let checksum = "d035c921848daca2dab77c94f3312306a90b99901d232382debb71e9f94cef8d"
 
 let package = Package(
     name: "MobileCore",
