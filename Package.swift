@@ -1,24 +1,50 @@
 // swift-tools-version:5.9
 import PackageDescription
 
-// MobileCore is built from MTS-LLC/mm-web-sdk (packages/mobile-core, Kotlin Multiplatform). That repo is private, so
-// SPM can't download its release assets; this repo exists only to host the zipped XCFramework in public releases.
-// To release: attach MobileCore.xcframework.zip to a release tagged `<version>` here, then update `version` and
-// `checksum` below (`swift package compute-checksum MobileCore.xcframework.zip`) and tag the same commit.
-let version = "0.3.0"
-let checksum = "d035c921848daca2dab77c94f3312306a90b99901d232382debb71e9f94cef8d"
+// The MinuteMaps iOS SDK, as prebuilt binaries attached to this repo's releases:
+//   • MinuteMaps.xcframework — the SDK (MTS-LLC/JMap2-iOS, MinuteMaps/)
+//   • MobileCore.xcframework — the shared Kotlin Multiplatform core it is compiled against (MTS-LLC/mm-web-sdk,
+//     packages/mobile-core)
+// Both source repos are private, so SPM can't download their release assets; this public repo hosts them.
+//
+// The two always ship together under one tag: MinuteMaps only works with the MobileCore build it was compiled against.
+// Don't edit `version` or the checksums by hand; scripts/release.sh sets them when it publishes a release.
+let version = "1.0.0"
+let minuteMapsChecksum = "9bb9fd6efc262eec3250c5f3df8cc829054dc0ab74921d5c304312e32d311a38"
+let mobileCoreChecksum = "8f9eeb7a013ede7ac28eb4be0056e9f05065bc8e5c59d326f207fbcee1f983a5"
+
+let releaseUrl = "https://github.com/MTS-LLC/minutemaps-ios/releases/download/\(version)"
 
 let package = Package(
-    name: "MobileCore",
+    name: "MinuteMaps",
     platforms: [.iOS(.v15)],
     products: [
-        .library(name: "MobileCore", targets: ["MobileCore"]),
+        .library(name: "MinuteMaps", targets: ["MinuteMapsSupport"]),
+    ],
+    dependencies: [
+        // MinuteMaps.xcframework is compiled against this version; keep the floor in step with JMap2-iOS's Package.resolved.
+        .package(url: "https://github.com/maplibre/maplibre-gl-native-distribution", from: "6.19.2"),
     ],
     targets: [
         .binaryTarget(
+            name: "MinuteMaps",
+            url: "\(releaseUrl)/MinuteMaps.xcframework.zip",
+            checksum: minuteMapsChecksum
+        ),
+        .binaryTarget(
             name: "MobileCore",
-            url: "https://github.com/MTS-LLC/mm-mobile-core-ios/releases/download/\(version)/MobileCore.xcframework.zip",
-            checksum: checksum
+            url: "\(releaseUrl)/MobileCore.xcframework.zip",
+            checksum: mobileCoreChecksum
+        ),
+        // Binary targets can't declare dependencies, so this empty target is what ties the two frameworks and MapLibre
+        // into the one `MinuteMaps` product. Apps import `MinuteMaps` and `MobileCore` directly, never this.
+        .target(
+            name: "MinuteMapsSupport",
+            dependencies: [
+                "MinuteMaps",
+                "MobileCore",
+                .product(name: "MapLibre", package: "maplibre-gl-native-distribution"),
+            ]
         ),
     ]
 )
